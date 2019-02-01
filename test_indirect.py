@@ -35,6 +35,16 @@ def find_action_with_text(widget, text):
             return a
 
 
+def print_children(widget, child_type=QWidget, indent=0):
+    if indent == 0:
+        print('Children of {} {}'.format(widget.objectName(), type(widget)))
+    space = ' ' * indent
+    for c in widget.children():
+        if isinstance(c, child_type):
+            print('{0}{1} {2}'.format(space, type(c), c.objectName()))
+            print_children(c, child_type, indent + 4)
+
+
 def click_button(btn):
     QMetaObject.invokeMethod(btn, 'click', Qt.QueuedConnection)
 
@@ -66,6 +76,14 @@ class TestIqtFit(GuiTestBase):
         self.iqt_fit = get_child(self.ida_tab_widget, 'tabIqtFit')
         self.fit_browser = get_child(self.iqt_fit, 'fitPropertyBrowser')
         self.data_view = get_child(self.iqt_fit, 'fitDataView')
+        self.single_input = get_child(self.data_view, 'loSingleInput')
+        self.file_input = get_child(self.single_input, 'rfFileInput')
+
+    def set_function(self, fun):
+        QMetaObject.invokeMethod(self.fit_browser, 'setFunction', Q_ARG('QString', fun))
+
+    def set_single_input(self, path):
+        self.file_input.setFileTextWithSearch(path)
 
 
 def test():
@@ -73,8 +91,9 @@ def test():
     class TestFitPropertyBrowser(TestIqtFit):
 
         def call(self):
-            Load(r'iris26176_graphite002_iqt.nxs', OutputWorkspace='ws')
             yield self.start_iqt_fit()
+            self.set_function('name=LinearBackground')
+            self.set_single_input('iris26176_graphite002_iqt.nxs')
 
     TestFitPropertyBrowser().run_test(close_on_finish=False)
 
