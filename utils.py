@@ -1,7 +1,7 @@
 from __future__ import print_function
 import inspect
 from qtpy.QtWidgets import (QAction, QWidget, QTabWidget, QApplication)
-from qtpy.QtCore import Qt, QMetaObject, Q_ARG, QTime
+from qtpy.QtCore import Qt, QMetaObject, Q_ARG, QTime, Q_RETURN_ARG
 
 
 qapp = QApplication.instance()
@@ -20,6 +20,17 @@ def discover_children(widget, child_type=QWidget):
         print(w, w.objectName(), text)
 
 
+def print_tree(widget, indent=0):
+    if indent == 0:
+        print('Children widgets of ', widget.objectName(), type(widget))
+    space = ' ' * indent
+    for w in widget.children():
+        if isinstance(w, QWidget):
+            text = '({})'.format(w.text()) if hasattr(w, 'text') else ''
+            print('{}{} {} {}'.format(space, w, w.objectName(), text))
+            print_tree(w, indent + 4)
+
+
 def get_child(widget, name, child_type=QWidget, timeout=3):
     t = QTime()
     t.start()
@@ -35,12 +46,22 @@ def get_child(widget, name, child_type=QWidget, timeout=3):
     return children[0]
 
 
-def wait_for(seconds=3):
+def wait(seconds=3):
     t = QTime()
     t.start()
     seconds *= 1000
     while t.elapsed() < seconds:
         qapp.processEvents()
+
+
+def wait_for(fun, timeout=3):
+    t = QTime()
+    t.start()
+    timeout *= 1000
+    is_true = fun()
+    while not is_true and t.elapsed() < timeout:
+        qapp.processEvents()
+        is_true = fun()
 
 
 def get_active_modal_widget(timeout=3):

@@ -31,14 +31,25 @@ class TestIqtFit(object):
         # print(self.fit_browser)
         self.data_view = get_child(self.iqt_fit, 'fitDataView')
         self.single_input = get_child(self.data_view, 'loSingleInput')
-        self.file_input = get_child(self.single_input, 'rfFileInput')
+        self.file_input = get_child(get_child(self.single_input, 'dsSample'), 'rfFileInput')
         self.run_button = get_child(self.iqt_fit, 'pbRun', QPushButton)
+        self.fit_single_button = get_child(self.iqt_fit, 'pbFitSingle', QPushButton)
+        self.plot_spec_index = get_child(self.iqt_fit, 'spPlotSpectrum')
 
     def set_function(self, fun):
-        QMetaObject.invokeMethod(self.fit_browser, 'setFunction', Q_ARG('QString', fun))
+        QMetaObject.invokeMethod(self.fit_browser, 'setFunction', Qt.QueuedConnection, Q_ARG('QString', fun))
+
+    def get_number_datasets(self):
+        return QMetaObject.invokeMethod(self.fit_browser, 'getNumberOfDatasets', Qt.DirectConnection, Q_RETURN_ARG('int'))
 
     def set_single_input(self, path):
         QMetaObject.invokeMethod(self.file_input, 'setFileTextWithSearch', Qt.QueuedConnection, Q_ARG('QString', path))
+
+    def plot_spectrum_number(self, index):
+        QMetaObject.invokeMethod(self.plot_spec_index, 'setValue', Qt.QueuedConnection, Q_ARG('int', index))
+
+    def run(self):
+        click_button(self.run_button)
 
 
 class TestFitPropertyBrowser(unittest.TestCase, TestIqtFit):
@@ -49,14 +60,11 @@ class TestFitPropertyBrowser(unittest.TestCase, TestIqtFit):
 
     def test_stuff(self):
         self.set_function('name=LinearBackground;name=ExpDecay')
-        # self.set_single_input('iris26176_graphite002_iqt.nxs')
-        b = get_child(self.iqt_fit, 'pbRun', QPushButton)
-        click_button(b)
-        d = get_active_modal_widget()
-        invoke(d, 'accept')
-        wait_for_active_modal_to_change(d)
-        d = get_active_modal_widget()
-        invoke(d, 'accept')
+        self.set_single_input('iris26176_graphite002_iqt.nxs')
+        wait_for(lambda: self.get_number_datasets() == 17)
+        # print_tree(self.iqt_fit)
+        self.plot_spectrum_number(3)
+        print(self.get_number_datasets())
 
 
 test = TestFitPropertyBrowser()
