@@ -1,6 +1,6 @@
 from __future__ import print_function
 import unittest
-# from qtpy.QtCore import QObject
+# from qtpy.QtCore import QObject, Signal, Slot
 from qtpy.QtWidgets import QPushButton
 from utils import *
 import _qti
@@ -32,12 +32,7 @@ class TestIqtFit(object):
         self.data_view = get_child(self.iqt_fit, 'fitDataView')
         self.single_input = get_child(self.data_view, 'loSingleInput')
         self.file_input = get_child(self.single_input, 'rfFileInput')
-        browse_btn = get_child(self.file_input, 'browseBtn')
-        click_button(browse_btn)
-        d = get_active_modal_widget()
-        print(d)
-        discover_children(d, QPushButton)
-        QMetaObject.invokeMethod(d, 'close', Qt.QueuedConnection)
+        self.run_button = get_child(self.iqt_fit, 'pbRun', QPushButton)
 
     def set_function(self, fun):
         QMetaObject.invokeMethod(self.fit_browser, 'setFunction', Q_ARG('QString', fun))
@@ -54,9 +49,14 @@ class TestFitPropertyBrowser(unittest.TestCase, TestIqtFit):
 
     def test_stuff(self):
         self.set_function('name=LinearBackground;name=ExpDecay')
-        self.set_single_input('iris26176_graphite002_iqt.nxs')
-        # self.assertTrue(True)
-        # self.iam_done = True
+        # self.set_single_input('iris26176_graphite002_iqt.nxs')
+        b = get_child(self.iqt_fit, 'pbRun', QPushButton)
+        click_button(b)
+        d = get_active_modal_widget()
+        invoke(d, 'accept')
+        wait_for_active_modal_to_change(d)
+        d = get_active_modal_widget()
+        invoke(d, 'accept')
 
 
 test = TestFitPropertyBrowser()

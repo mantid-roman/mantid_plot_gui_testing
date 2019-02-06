@@ -16,7 +16,8 @@ def is_test_method(value):
 def discover_children(widget, child_type=QWidget):
     print('Children widgets of ', widget.objectName(), type(widget))
     for w in widget.findChildren(child_type):
-        print(w, w.objectName())
+        text = '({})'.format(w.text()) if hasattr(w, 'text') else ''
+        print(w, w.objectName(), text)
 
 
 def get_child(widget, name, child_type=QWidget, timeout=3):
@@ -51,6 +52,20 @@ def get_active_modal_widget(timeout=3):
     return QApplication.activeModalWidget()
 
 
+def wait_for_active_modal_to_change(modal, timeout=3):
+    t = QTime()
+    t.start()
+    timeout *= 1000
+    am = QApplication.activeModalWidget()
+    if am is None or modal is None or am != modal:
+        return
+    while am == modal and t.elapsed() < timeout:
+        qapp.processEvents()
+        am = QApplication.activeModalWidget()
+    if am == modal:
+        raise RuntimeError('Action timed out')
+
+
 def find_action_with_text(widget, text):
     for a in widget.findChildren(QAction):
         if a.text() == text:
@@ -69,10 +84,17 @@ def print_children(widget, child_type=QWidget, indent=0):
 
 def click_button(btn):
     QMetaObject.invokeMethod(btn, 'click', Qt.QueuedConnection)
+    qapp.processEvents()
 
 
 def trigger_action(action):
     QMetaObject.invokeMethod(action, 'trigger', Qt.QueuedConnection)
+    qapp.processEvents()
+
+
+def invoke(obj, method):
+    QMetaObject.invokeMethod(obj, method, Qt.QueuedConnection)
+    qapp.processEvents()
 
 
 def change_current_tab(tab_widget, index):
@@ -80,5 +102,6 @@ def change_current_tab(tab_widget, index):
         raise RuntimeError('Widget must be a QTabWidget, found {t}, {n}'.format(t=type(tab_widget),
                                                                                 n=tab_widget.objectName()))
     QMetaObject.invokeMethod(tab_widget, 'setCurrentIndex', Qt.QueuedConnection, Q_ARG('int', index))
+    qapp.processEvents()
 
 
