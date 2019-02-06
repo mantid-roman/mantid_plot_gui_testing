@@ -1,5 +1,16 @@
-from qtpy.QtWidgets import (QAction, QWidget, QTabWidget)
-from qtpy.QtCore import Qt, QMetaObject, Q_ARG
+from __future__ import print_function
+import inspect
+from qtpy.QtWidgets import (QAction, QWidget, QTabWidget, QApplication)
+from qtpy.QtCore import Qt, QMetaObject, Q_ARG, QTime
+
+
+qapp = QApplication.instance()
+
+
+def is_test_method(value):
+    if not (inspect.ismethod(value) or inspect.isfunction(value)):
+        return False
+    return value.__name__.startswith('test_')
 
 
 def discover_children(widget, child_type=QWidget):
@@ -8,13 +19,36 @@ def discover_children(widget, child_type=QWidget):
         print(w, w.objectName())
 
 
-def get_child(widget, name, child_type=QWidget):
-    children = widget.findChildren(child_type, name)
+def get_child(widget, name, child_type=QWidget, timeout=3):
+    t = QTime()
+    t.start()
+    timeout *= 1000
+    children = []
+    while len(children) == 0 and t.elapsed() < timeout:
+        children = widget.findChildren(child_type, name)
+        qapp.processEvents()
     if len(children) == 0:
         raise RuntimeError("Widget doesn't have child with name {}".format(name))
     if len(children) > 1:
         print('Widget has more than 1 child with name {}'.format(name))
     return children[0]
+
+
+def wait_for(seconds=3):
+    t = QTime()
+    t.start()
+    seconds *= 1000
+    while t.elapsed() < seconds:
+        qapp.processEvents()
+
+
+def get_active_modal_widget(timeout=3):
+    t = QTime()
+    t.start()
+    timeout *= 1000
+    while not QApplication.activeModalWidget() and t.elapsed() < timeout:
+        qapp.processEvents()
+    return QApplication.activeModalWidget()
 
 
 def find_action_with_text(widget, text):
