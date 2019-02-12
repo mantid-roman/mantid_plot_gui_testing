@@ -10,10 +10,19 @@ class TestIqtFit(object):
 
     def runTest(self, method=None):
         pass
-        # for test in inspect.getmembers(self, is_test_method):
-        #     name = test[0]
-        #     if method is None or method == name:
-        #         self.run_test(method=name, close_on_finish=False)
+
+    @classmethod
+    def run_test(cls, test_name, do_finish=False):
+        test = cls()
+        getattr(test, test_name)()
+        if do_finish:
+            test.finish()
+
+    @classmethod
+    def run_all_tests(cls):
+        for test in inspect.getmembers(cls, is_test_method):
+            name = test[0]
+            cls.run_test(name, do_finish=True)
 
     def create_widget(self):
         aw = _qti.app
@@ -32,9 +41,16 @@ class TestIqtFit(object):
         self.data_view = get_child(self.iqt_fit, 'fitDataView')
         self.single_input = get_child(self.data_view, 'loSingleInput')
         self.file_input = get_child(get_child(self.single_input, 'dsSample'), 'rfFileInput')
+        self.end_x = get_child(self.single_input, 'dsbEndX')
         self.run_button = get_child(self.iqt_fit, 'pbRun', QPushButton)
         self.fit_single_button = get_child(self.iqt_fit, 'pbFitSingle', QPushButton)
         self.plot_spec_index = get_child(self.iqt_fit, 'spPlotSpectrum')
+
+    def finish(self):
+        invoke(self.ida.parent(), 'close')
+        self.ida = None
+        wait(0.5)
+        mtd.clear()
 
     def set_function(self, fun):
         QMetaObject.invokeMethod(self.fit_browser, 'setFunction', Qt.QueuedConnection, Q_ARG('QString', fun))
@@ -45,8 +61,14 @@ class TestIqtFit(object):
     def set_single_input(self, path):
         QMetaObject.invokeMethod(self.file_input, 'setFileTextWithSearch', Qt.QueuedConnection, Q_ARG('QString', path))
 
-    def plot_spectrum_number(self, index):
+    def plot_spectrum(self, index):
         QMetaObject.invokeMethod(self.plot_spec_index, 'setValue', Qt.QueuedConnection, Q_ARG('int', index))
+
+    def set_end_x(self, value):
+        QMetaObject.invokeMethod(self.end_x, 'setValue', Qt.QueuedConnection, Q_ARG('double', value))
+
+    def fit_single(self):
+        click_button(self.fit_single_button)
 
     def run(self):
         click_button(self.run_button)
@@ -62,10 +84,20 @@ class TestFitPropertyBrowser(unittest.TestCase, TestIqtFit):
         self.set_function('name=LinearBackground;name=ExpDecay')
         self.set_single_input('iris26176_graphite002_iqt.nxs')
         wait_for(lambda: self.get_number_datasets() == 17)
-        # print_tree(self.iqt_fit)
-        self.plot_spectrum_number(3)
-        print(self.get_number_datasets())
+        self.set_end_x(0.2)
+        self.fit_single()
+        wait_for(lambda: mtd.doesExist('iris26176_graphite002_iqtFit__s0_Parameters'), timeout=10)
+        self.assertTrue(mtd.doesExist('iris26176_graphite002_iqtFit__s0_Parameters'))
+
+    def test_stuff_1(self):
+        self.set_function('name=LinearBackground;name=ExpDecay')
+        self.set_single_input('iris26176_graphite002_iqt.nxs')
+        wait_for(lambda: self.get_number_datasets() == 17)
+        self.set_end_x(0.2)
+        self.fit_single()
+        wait_for(lambda: mtd.doesExist('iris26176_graphite002_iqtFit__s0_Parameters'), timeout=10)
+        self.assertTrue(mtd.doesExist('iris26176_graphite002_iqtFit__s0_Parameters'))
 
 
-test = TestFitPropertyBrowser()
-test.test_stuff()
+# TestFitPropertyBrowser.run_all_tests()
+TestFitPropertyBrowser.run_test('test_stuff')
