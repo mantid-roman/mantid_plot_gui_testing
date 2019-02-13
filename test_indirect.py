@@ -56,7 +56,15 @@ class TestIqtFit(object):
         QMetaObject.invokeMethod(self.fit_browser, 'setFunction', Qt.QueuedConnection, Q_ARG('QString', fun))
 
     def get_number_datasets(self):
-        return QMetaObject.invokeMethod(self.fit_browser, 'getNumberOfDatasets', Qt.DirectConnection, Q_RETURN_ARG('int'))
+        return QMetaObject.invokeMethod(self.fit_browser, 'getNumberOfDatasets', Qt.DirectConnection,
+                                        Q_RETURN_ARG('int'))
+
+    def get_single_function_str(self):
+        return QMetaObject.invokeMethod(self.fit_browser, 'getSingleFunctionStr', Qt.DirectConnection,
+                                        Q_RETURN_ARG('QString'))
+
+    def get_single_function(self):
+        return create_function(self.get_single_function_str())
 
     def set_single_input(self, path):
         QMetaObject.invokeMethod(self.file_input, 'setFileTextWithSearch', Qt.QueuedConnection, Q_ARG('QString', path))
@@ -80,24 +88,41 @@ class TestFitPropertyBrowser(unittest.TestCase, TestIqtFit):
         unittest.TestCase.__init__(self)
         TestIqtFit.__init__(self)
 
-    def test_stuff(self):
+    def test_single_fit(self):
         self.set_function('name=LinearBackground;name=ExpDecay')
         self.set_single_input('iris26176_graphite002_iqt.nxs')
         wait_for(lambda: self.get_number_datasets() == 17)
         self.set_end_x(0.2)
         self.fit_single()
-        wait_for(lambda: mtd.doesExist('iris26176_graphite002_iqtFit__s0_Parameters'), timeout=10)
+        wait_for(lambda: mtd.doesExist('iris26176_graphite002_iqtFit__s0_Workspaces'), timeout=10)
         self.assertTrue(mtd.doesExist('iris26176_graphite002_iqtFit__s0_Parameters'))
+        self.assertTrue(mtd.doesExist('iris26176_graphite002_iqtFit__s0_Workspaces'))
+        self.assertTrue(mtd.doesExist('iris26176_graphite002_iqtFit__s0'))
+        wait(1)
+        f = self.get_single_function()
+        self.assertAlmostEqual(f[0].A0, -0.014, 3)
+        self.assertAlmostEqual(f[0].A1, 0.211, 3)
+        self.assertAlmostEqual(f[1].Height, 0.782, 3)
+        self.assertAlmostEqual(f[1].Lifetime, 0.039, 3)
 
-    def test_stuff_1(self):
+    def test_single_fit_another_spectrum(self):
         self.set_function('name=LinearBackground;name=ExpDecay')
         self.set_single_input('iris26176_graphite002_iqt.nxs')
         wait_for(lambda: self.get_number_datasets() == 17)
-        self.set_end_x(0.2)
+        self.set_end_x(0.06)
+        self.plot_spectrum(3)
         self.fit_single()
-        wait_for(lambda: mtd.doesExist('iris26176_graphite002_iqtFit__s0_Parameters'), timeout=10)
-        self.assertTrue(mtd.doesExist('iris26176_graphite002_iqtFit__s0_Parameters'))
+        wait_for(lambda: mtd.doesExist('iris26176_graphite002_iqtFit__s3_Workspaces'), timeout=2)
+        self.assertTrue(mtd.doesExist('iris26176_graphite002_iqtFit__s3_Parameters'))
+        self.assertTrue(mtd.doesExist('iris26176_graphite002_iqtFit__s3_Workspaces'))
+        self.assertTrue(mtd.doesExist('iris26176_graphite002_iqtFit__s3'))
+        wait(1)
+        f = self.get_single_function()
+        self.assertAlmostEqual(f[0].A0, 0.043, 3)
+        self.assertAlmostEqual(f[0].A1, -0.35495, 3)
+        self.assertAlmostEqual(f[1].Height, 0.878448, 3)
+        self.assertAlmostEqual(f[1].Lifetime, 0.010, 3)
 
 
-# TestFitPropertyBrowser.run_all_tests()
-TestFitPropertyBrowser.run_test('test_stuff')
+TestFitPropertyBrowser.run_all_tests()
+# TestFitPropertyBrowser.run_test('test_single_fit_another_spectrum')

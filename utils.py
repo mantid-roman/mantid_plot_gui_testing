@@ -126,3 +126,9 @@ def change_current_tab(tab_widget, index):
     qapp.processEvents()
 
 
+def create_function(fun_str):
+    from mantid import FunctionFactory
+    from mantid.fitfunctions import FunctionWrapper, _name_to_constructor_map
+    fun = FunctionFactory.createInitialized(fun_str)
+    ctor = _name_to_constructor_map.get(fun.name(), FunctionWrapper)
+    return ctor(fun)
