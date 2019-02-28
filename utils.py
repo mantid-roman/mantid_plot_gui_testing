@@ -99,8 +99,9 @@ def print_children(widget, child_type=QWidget, indent=0):
     space = ' ' * indent
     for c in widget.children():
         if isinstance(c, child_type):
-            print('{0}{1} {2}'.format(space, type(c), c.objectName()))
-            print_children(c, child_type, indent + 4)
+            text = '({})'.format(c.text()) if hasattr(c, 'text') else ''
+            print('{0}{1} {2} {3}'.format(space, type(c), c.objectName(), text))
+        print_children(c, child_type, indent + 4)
 
 
 def click_button(btn):
