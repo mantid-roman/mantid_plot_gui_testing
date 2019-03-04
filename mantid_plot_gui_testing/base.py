@@ -1,6 +1,5 @@
 from __future__ import print_function
 from utils import *
-import _qti
 
 
 class TestBase(object):
@@ -22,6 +21,5 @@ class TestBase(object):
             cls.run_test(name, do_finish=True)
 
     def create_widget(self):
-        aw = _qti.app
-        return aw
+        return app_window
 

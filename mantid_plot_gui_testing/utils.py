@@ -1,10 +1,12 @@
-from __future__ import print_function
+from __future__ import print_function, unicode_literals
 import inspect
 from qtpy.QtWidgets import (QAction, QWidget, QTabWidget, QApplication)
 from qtpy.QtCore import Qt, QMetaObject, Q_ARG, QTime, Q_RETURN_ARG
+import _qti
 
 
 qapp = QApplication.instance()
+app_window = _qti.app
 
 
 def is_test_method(value):
@@ -31,19 +33,29 @@ def print_tree(widget, indent=0):
             print_tree(w, indent + 4)
 
 
-def get_child(widget, name, child_type=QWidget, timeout=3):
+def get_child(widget, object_name, child_type=QWidget, timeout=3):
     t = QTime()
     t.start()
     timeout *= 1000
     children = []
     while len(children) == 0 and t.elapsed() < timeout:
-        children = widget.findChildren(child_type, name)
+        children = widget.findChildren(child_type, object_name)
         qapp.processEvents()
     if len(children) == 0:
-        raise RuntimeError("Widget doesn't have child with name {}".format(name))
+        raise RuntimeError("Widget doesn't have child with name {}".format(object_name))
     if len(children) > 1:
-        print('Widget has more than 1 child with name {}'.format(name))
+        print('Widget has more than 1 child with name {}'.format(object_name))
     return children[0]
+
+
+def get_children_with_text(widget, text):
+    children = []
+    for w in widget.children():
+        if isinstance(w, QWidget):
+            if hasattr(w, 'text') and w.text() == text:
+                children.append(w)
+            children += get_children_with_text(w, text)
+    return children
 
 
 def wait(seconds=3):
