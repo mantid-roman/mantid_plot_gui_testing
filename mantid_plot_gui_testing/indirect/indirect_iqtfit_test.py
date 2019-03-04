@@ -3,8 +3,8 @@ import unittest
 
 from mantid import mtd
 
-from indirect_base import TestIDAFit
-from utils import *
+from ..utils import *
+from .indirect_base import TestIDAFit
 
 
 class TestIqtFit(unittest.TestCase, TestIDAFit):

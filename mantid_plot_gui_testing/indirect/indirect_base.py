@@ -3,8 +3,8 @@ from qtpy.QtWidgets import QPushButton
 
 from mantid import mtd
 
-from base import TestBase
-from utils import *
+from mantid_plot_gui_testing.base import TestBase
+from mantid_plot_gui_testing.utils import *
 
 
 class TestIDAFit(TestBase):
